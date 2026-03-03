@@ -13,6 +13,7 @@ import { ProcessPaymentDto } from 'src/payment/dto/process-payment.dto';
 import { SharedService } from 'src/shared/shared.service';
 import { IdempotencyResponseDto } from './dto/idempotency-response.dto';
 import { IdempotencyHelper } from './idempotency.helper';
+import { IDEMPOTENCY_STATUSES } from 'src/shared/shared.constants';
 
 @Injectable()
 export class IdempotencyService {
@@ -29,7 +30,7 @@ export class IdempotencyService {
     const record = this.idempotencyRepository.create({
       idempotencyKey,
       requestHash,
-      status: 'processing',
+      status: IDEMPOTENCY_STATUSES.PROCESSING,
     });
     return await this.idempotencyRepository.save(record);
   }
@@ -37,7 +38,7 @@ export class IdempotencyService {
   async updateIdempotencyRecord(record: IdempotencyModel, statusCode: number, responseData: any) {
     record.statusCode = statusCode;
     record.responseData = JSON.stringify(responseData);
-    record.status = 'completed';
+    record.status = IDEMPOTENCY_STATUSES.COMPLETED;
     await this.idempotencyRepository.save(record);
   }
 
