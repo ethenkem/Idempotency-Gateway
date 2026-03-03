@@ -58,7 +58,7 @@ export class IdempotencyService {
     }
 
     // 6. Duplicate key handling
-    if (record.requestHash == requestHash) {
+    if (record.requestHash !== requestHash) {
       throw new ConflictException(
         'Idempotency key already used for a different request body.',
       );
