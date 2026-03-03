@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { PaymentModule } from './payment/payment.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdempotencyModule } from './idempotency/idempotency.module';
+import { SharedModule } from './shared/shared.module';
+import { SharedService } from './shared/shared.service';
 
 @Module({
   imports: [
@@ -15,8 +17,10 @@ import { IdempotencyModule } from './idempotency/idempotency.module';
     }),
     PaymentModule,
     IdempotencyModule,
+    SharedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
+  exports: [SharedService],
 })
 export class AppModule {}
