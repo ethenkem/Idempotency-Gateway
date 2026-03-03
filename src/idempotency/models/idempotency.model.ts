@@ -20,5 +20,5 @@ export class IdempotencyModel {
   statusCode: number;
 
   @Column()
-  status: 'processing' | 'completed' | 'failed';
+  status: 'processing' | 'completed';
 }
