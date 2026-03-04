@@ -21,6 +21,5 @@ import { SharedService } from './shared/shared.service';
   ],
   controllers: [AppController],
   providers: [AppService],
-  exports: [SharedService],
 })
 export class AppModule {}
