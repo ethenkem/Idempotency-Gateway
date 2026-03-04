@@ -1,7 +1,6 @@
 import { Controller, Post, Body, Headers, Res } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
-import { IdempotencyService } from 'src/idempotency/idempotency.service';
 import { GenericResponseDto } from 'src/shared/dto/generic-response.dto';
 import type { Response } from 'express';
 
@@ -11,7 +10,7 @@ export class PaymentController {
 
   @Post('/process-payment')
   async processPayment(
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
     @Body() processPayment: ProcessPaymentDto,
     @Headers('Idempotency-Key') idempotencyKey: string,
   ): Promise<GenericResponseDto> {
