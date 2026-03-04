@@ -38,12 +38,13 @@ describe('PaymentController', () => {
       previousResponseStatusCode: 200,
       headers: { 'X-Cache-Hit': 'true' },
     });
+    const req = { ip: '127.0.0.1' } as any;
     const res = { setHeader: jest.fn() } as any;
     const body = {} as any;
     const idempotencyKey = 'existing-key';
 
     // Call the controller method
-    const result = await controller.processPayment(res, body, idempotencyKey);
+    const result = await controller.processPayment(req, res, body, idempotencyKey);
 
     // Assert the controller returns the service result
     expect(result).toEqual({
@@ -56,6 +57,7 @@ describe('PaymentController', () => {
 
     // Assert the service method was called with correct arguments
     expect(mockPaymentService.processPaymentService).toHaveBeenCalledWith(
+      '127.0.0.1',
       'existing-key',
       {},
     );

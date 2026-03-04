@@ -2,10 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentService } from './payment.service';
 import { IdempotencyService } from 'src/idempotency/idempotency.service';
 import { BadRequestException } from '@nestjs/common';
+import { AuditService } from 'src/audit/audit.service';
+import { ProcessPaymentDto } from './dto/process-payment.dto';
 
 describe('PaymentService', () => {
   let service: PaymentService;
   let idempotencyService: IdempotencyService;
+  let auditService: AuditService;
 
   const mockIdempotencyService = {
     findOneRecordByIdempotencyKey: jest.fn(),
@@ -14,76 +17,74 @@ describe('PaymentService', () => {
     executeOrReplay: jest.fn(),
   };
 
+  const mockAuditService = {
+    logRequest: jest.fn().mockResolvedValue(true),
+  };
+
+  const testIp = '127.0.0.1';
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentService,
-        {
-          provide: IdempotencyService,
-          useValue: mockIdempotencyService,
-        },
+        { provide: IdempotencyService, useValue: mockIdempotencyService },
+        { provide: AuditService, useValue: mockAuditService },
       ],
     }).compile();
 
     service = module.get<PaymentService>(PaymentService);
     idempotencyService = module.get<IdempotencyService>(IdempotencyService);
+    auditService = module.get<AuditService>(AuditService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  // Test case for missing idempotency key
   it('should throw BadRequestException if idempotencyKey is missing', async () => {
     await expect(
-      service.processPaymentService('', {
-        amount: 100,
-        currency: 'USD',
-      } as any),
+      service.processPaymentService(testIp, '', {} as ProcessPaymentDto),
     ).rejects.toThrow(BadRequestException);
   });
 
-  // Test case for creating a new record and processing payment
-  it('should create record and process payment if no record exists', async () => {
-    mockIdempotencyService.findOneRecordByIdempotencyKey.mockResolvedValue(
-      null,
-    );
-    mockIdempotencyService.createIdempotencyRecord.mockResolvedValue({
-      id: 1,
-    });
+  it('should create record, process payment, and log audits for first request', async () => {
+    mockIdempotencyService.findOneRecordByIdempotencyKey.mockResolvedValue(null);
+    mockIdempotencyService.createIdempotencyRecord.mockResolvedValue({ id: 1 });
     jest.spyOn(service, 'simulatePaymentProcessing').mockResolvedValue({
       statusCode: 200,
       body: { message: 'Payment processed successfully' },
     });
 
-    const result = await service.processPaymentService('test-key', {} as any);
+    const result = await service.processPaymentService(testIp, 'test-key', {} as ProcessPaymentDto);
 
-    expect(result).toEqual({
-      success: true,
-      message: 'Charged 100 GHS',
-    });
+    // Service response
+    expect(result).toEqual({ success: true, message: 'Charged 100 GHS' });
 
-    expect(mockIdempotencyService.createIdempotencyRecord).toHaveBeenCalled();
+    // Idempotency service calls
+    expect(mockIdempotencyService.createIdempotencyRecord).toHaveBeenCalledWith('test-key', {});
     expect(mockIdempotencyService.updateIdempotencyRecord).toHaveBeenCalled();
+
+    // Audit logs
+    expect(mockAuditService.logRequest).toHaveBeenNthCalledWith(1, {
+      idempotencyKey: 'test-key',
+      requestBody: {},
+      responseBody: null,
+      status: 'processing',
+      ipAddress: testIp,
+    });
   });
 
-  // Test case for replaying payment if record already exists
-  it('should replay payment if record already exists', async () => {
-    mockIdempotencyService.findOneRecordByIdempotencyKey.mockResolvedValue({
-      id: 1,
-    });
-
+  it('should replay payment if record already exists and log audit', async () => {
+    mockIdempotencyService.findOneRecordByIdempotencyKey.mockResolvedValue({ id: 1 });
     mockIdempotencyService.executeOrReplay.mockResolvedValue({
       statusCode: 200,
       body: { message: 'Payment processed successfully' },
       headers: {},
     });
 
-    const result = await service.processPaymentService(
-      'existing-key',
-      {} as any,
-    );
+    const result = await service.processPaymentService(testIp, 'existing-key', {} as ProcessPaymentDto);
 
+    // Service response
     expect(result).toEqual({
       success: true,
       message: 'Payment processed successfully',
@@ -91,7 +92,17 @@ describe('PaymentService', () => {
       previousResponseStatusCode: 200,
       headers: {},
     });
-    expect(result.isReplay).toBe(true)
-    expect(mockIdempotencyService.executeOrReplay).toHaveBeenCalled();
+
+    // Idempotency execute call
+    expect(mockIdempotencyService.executeOrReplay).toHaveBeenCalledWith('existing-key', {});
+
+    // Audit log for replay
+    expect(mockAuditService.logRequest).toHaveBeenCalledWith({
+      idempotencyKey: 'existing-key',
+      requestBody: {},
+      responseBody: { message: 'Payment processed successfully' },
+      status: 'replayed',
+      ipAddress: testIp,
+    });
   });
 });

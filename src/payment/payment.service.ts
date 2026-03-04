@@ -1,12 +1,16 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Req } from '@nestjs/common';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { IdempotencyService } from 'src/idempotency/idempotency.service';
 import { ProcessRaymentResponseDto } from './dto/process-payment-response.dto';
+import { AuditService } from 'src/audit/audit.service';
+import { AUDIT_LOG_RECORD_STATUSES } from 'src/audit/audit.constants';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class PaymentService {
   constructor(
     private readonly idempotencyService: IdempotencyService,
+    private readonly auditService: AuditService,
   ){}
    // Simulate payment processing logic
   async simulatePaymentProcessing(): Promise<{ statusCode: number; body: any }> {
@@ -20,13 +24,17 @@ export class PaymentService {
     };
   } 
 
-  async processPaymentService(idempotencyKey: string, body: ProcessPaymentDto): Promise<ProcessRaymentResponseDto> {
+  async processPaymentService(ipAddress: string, idempotencyKey: string, body: ProcessPaymentDto): Promise<ProcessRaymentResponseDto> {
     if (!idempotencyKey) {
       throw new BadRequestException('Idempotency key is required');
     }
     let record = await this.idempotencyService.findOneRecordByIdempotencyKey(idempotencyKey)
 
     if (!record) { 
+       // Log audit for processing
+      const auditLog = {idempotencyKey, requestBody:body, responseBody: null, status: AUDIT_LOG_RECORD_STATUSES.PROCESSING, ipAddress};
+      await this.auditService.logRequest(auditLog);
+      
       record = await this.idempotencyService.createIdempotencyRecord(idempotencyKey, body)
       // Simulate payment processing delay
       const result = await this.simulatePaymentProcessing();
@@ -36,6 +44,10 @@ export class PaymentService {
     } else {
       // if record exists 
       const res = await this.idempotencyService.executeOrReplay(idempotencyKey, body);
+
+       // Log audit for replayed request
+      const auditLog = {idempotencyKey, requestBody:body, responseBody: res.body, status: AUDIT_LOG_RECORD_STATUSES.REPLAYED, ipAddress};
+      await this.auditService.logRequest(auditLog);
       return {success: true, message: res.body.message, isReplay: true, previousResponseStatusCode: res.statusCode, headers: res.headers};
     }
   }
