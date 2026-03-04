@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdempotencyModule } from './idempotency/idempotency.module';
 import { SharedModule } from './shared/shared.module';
 import { SharedService } from './shared/shared.service';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SharedService } from './shared/shared.service';
     PaymentModule,
     IdempotencyModule,
     SharedModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],
