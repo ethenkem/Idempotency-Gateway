@@ -6,9 +6,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity("Idempotency")
+@Entity('Idempotency')
 export class IdempotencyModel {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ unique: true })
@@ -26,7 +26,7 @@ export class IdempotencyModel {
   statusCode: number;
 
   @Column()
-  status: 'processing' | 'completed';
+  status: 'processing' | 'completed' | 'failed';
 
   @CreateDateColumn()
   createdAt: String;

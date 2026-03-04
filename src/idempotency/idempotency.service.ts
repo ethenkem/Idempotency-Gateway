@@ -74,7 +74,7 @@ export class IdempotencyService {
     } 
     
     // The "In-Flight" Check
-      if (record.status === 'processing') {
+      if (record.status === IDEMPOTENCY_STATUSES.PROCESSING) {
         const processResponse = await this.idempotencyHelper.waitUntilProcessingCompletes(record.id);
         record = await this.findOneRecordById(record.id);
         if (record?.status === 'completed') {
