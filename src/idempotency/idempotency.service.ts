@@ -44,7 +44,6 @@ export class IdempotencyService {
     let record: IdempotencyModel | null = await this.idempotencyRepository.findOne({
         where: { idempotencyKey },
       });
-      console.log('Idempotency record found:', record);
     return record;
   }
   
