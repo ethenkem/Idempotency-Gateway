@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity("idempotency")
+@Entity("Idempotency")
 export class IdempotencyModel {
   @PrimaryGeneratedColumn("uuid")
   id: string;

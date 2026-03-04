@@ -40,11 +40,11 @@ export class IdempotencyService {
     await this.idempotencyRepository.save(record);
   }
 
-  async findOneRecordByIdempotencyKey(idempotencyKey: string): Promise<IdempotencyModel> {
+  async findOneRecordByIdempotencyKey(idempotencyKey: string): Promise<IdempotencyModel | null> {
     let record: IdempotencyModel | null = await this.idempotencyRepository.findOne({
         where: { idempotencyKey },
       });
-    if (!record) throw new NotFoundException('Idempotency record not found');
+      console.log('Idempotency record found:', record);
     return record;
   }
   
