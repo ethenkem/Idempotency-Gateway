@@ -2,8 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  InternalServerErrorException,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,7 +15,7 @@ import { IDEMPOTENCY_STATUSES } from 'src/shared/shared.constants';
 
 @Injectable()
 export class IdempotencyService {
-  private readonly logger = new Logger(IdempotencyService.name);
+
   constructor(
     @InjectRepository(IdempotencyModel)
     private idempotencyRepository: Repository<IdempotencyModel>,
@@ -46,7 +44,14 @@ export class IdempotencyService {
     let record: IdempotencyModel | null = await this.idempotencyRepository.findOne({
         where: { idempotencyKey },
       });
-
+    if (!record) throw new NotFoundException('Idempotency record not found');
+    return record;
+  }
+  
+  async findOneRecordById(id: string): Promise<IdempotencyModel> {
+    let record: IdempotencyModel | null = await this.idempotencyRepository.findOne({
+        where: { id },
+      });
     if (!record) throw new NotFoundException('Idempotency record not found');
     return record;
   }
@@ -66,6 +71,17 @@ export class IdempotencyService {
       throw new ConflictException(
         'Idempotency key already used for a different request body.',
       );
+    } 
+    
+    // The "In-Flight" Check
+      if (record.status === 'processing') {
+        const processResponse = await this.idempotencyHelper.waitUntilProcessingCompletes(record.id);
+        record = await this.findOneRecordById(record.id);
+        if (record?.status === 'completed') {
+          return { statusCode: processResponse.statusCode, body: processResponse.body };
+        } else {
+          throw new BadRequestException('Previous request failed. Please retry.');
+        }
     }
 
     return {

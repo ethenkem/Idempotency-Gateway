@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { IdempotencyModel } from './models/idempotency.model';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class IdempotencyHelper {
-  constructor(private idempotencyRepository: Repository<IdempotencyModel>) {}
+  constructor(  
+    @InjectRepository(IdempotencyModel)
+    private idempotencyRepository: Repository<IdempotencyModel>
+  ) {}
 
-  async waitUntilProcessingCompletes(recordId: number) {
+  async waitUntilProcessingCompletes(recordId: string) {
     let record = await this.idempotencyRepository.findOne({
       where: { id: recordId },
     });
@@ -16,5 +20,10 @@ export class IdempotencyHelper {
         where: { id: recordId },
       });
     }
+    // simulate payment processing delay and response
+    return {
+      statusCode: 200,
+      body: { message: 'Payment processed successfully' },
+    };
   }
 }

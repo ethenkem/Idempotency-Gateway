@@ -1,9 +1,15 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
-@Entity()
+@Entity("idempotency")
 export class IdempotencyModel {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
   @Column({ unique: true })
   idempotencyKey: string;
@@ -21,4 +27,10 @@ export class IdempotencyModel {
 
   @Column()
   status: 'processing' | 'completed';
+
+  @CreateDateColumn()
+  createdAt: String;
+
+  @UpdateDateColumn()
+  updtedAt: String;
 }
