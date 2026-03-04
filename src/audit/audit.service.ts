@@ -21,4 +21,8 @@ export class AuditService {
     });
     return this.auditRepo.save(audit);
   }
+
+  async findAudits(filters: Partial<PaymentAudit>): Promise<PaymentAudit[]> {
+    return this.auditRepo.find({ where: filters });
+  }
 }
