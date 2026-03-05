@@ -53,9 +53,9 @@ npm install
 Create a `.env` file in the root directory, example:
 ```env
 # make sure to include the database name at the end of the connection string
-# for Atlas: mongodb+srv://username:password@cluster.mongodb.net/idempotency-gateway
+# for Atlas: mongodb+srv://username:password@cluster.mongodb.net/IdempotencyGateway
 # make sure ip access list has 0.0.0.0/0 for localhost
-MONGO_DB_CONNECTION_STRING=mongodb://localhost:27017/idempotency-gateway
+MONGO_DB_CONNECTION_STRING=mongodb://localhost:27017/IdempotencyGateway
 ```
 
 ### Running the App
