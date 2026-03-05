@@ -42,7 +42,7 @@ export class PaymentService {
       const result = await this.simulatePaymentProcessing();
       status = IDEMPOTENCY_STATUSES.COMPLETED
       await this.idempotencyService.updateIdempotencyRecord(record, result.statusCode, result.body, status);
-      return { success: true, message:"Charged 100 GHS"};
+      return { success: true, message:`Charged ${body.amount} GHS`};
     } else {
       // if record exists 
       const res = await this.idempotencyService.executeOrReplay(idempotencyKey, body);
