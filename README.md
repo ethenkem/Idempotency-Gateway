@@ -51,10 +51,10 @@ npm install
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory, example:
 ```env
+# make sure ip access list has 0.0.0.0/0 for localhost
 MONGODB_URI=mongodb://localhost:27017/idempotency-gateway
-PORT=3000
 ```
 
 ### Running the App
