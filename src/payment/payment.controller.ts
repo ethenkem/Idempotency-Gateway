@@ -29,10 +29,10 @@ export class PaymentController {
     return {
       success: true,
       message: response.message,
-      data: {
-        previousResponseBody: response.isReplay ? response.previousResponseData?.previousResponseBody : null,
-        previousResponseStatusCode: response.isReplay ? response.previousResponseData?.previousResponseStatusCode : null
-      }
+      data: response.isReplay ? {
+        previousResponseBody: response.previousResponseData?.previousResponseBody,
+        previousResponseStatusCode: response.previousResponseData?.previousResponseStatusCode
+      } : null
     };
   }
 }
