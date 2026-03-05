@@ -233,6 +233,67 @@ Content-Type: application/json
 X-Cache-Hit: true
 ```
 
+### GET `/audit/logs`
+
+Retrieves audit log entries. Supports optional query parameters to filter results by idempotency key, status, or IP address.
+
+#### Query Parameters
+
+| Parameter | Required | Description |
+|---|---|---|
+| `key` | ❌ No | Filter by idempotency key |
+| `status` | ❌ No | Filter by status (`processing` or `replayed`) |
+| `ip` | ❌ No | Filter by client IP address |
+
+---
+
+#### Example 1 — Get all logs
+```http
+GET /audit/logs
+```
+
+**Response `200 OK`:**
+```json
+[
+  {
+    "idempotencyKey": "txn_abc_001",
+    "requestBody": { "amount": 100, "currency": "GHS" },
+    "responseBody": { "message": "Payment processed successfully" },
+    "status": "processing",
+    "ipAddress": "127.0.0.1",
+    "createdAt": "2026-03-05T01:06:45.000Z"
+  }
+]
+```
+
+---
+
+#### Example 2 — Filter by idempotency key
+```http
+GET /audit/logs?key=txn_abc_001
+```
+
+---
+
+#### Example 3 — Filter by status
+```http
+GET /audit/logs?status=replayed
+```
+
+---
+
+#### Example 4 — Filter by IP address
+```http
+GET /audit/logs?ip=127.0.0.1
+```
+
+---
+
+#### Example 5 — Combine filters
+```http
+GET /audit/logs?key=txn_abc_001&status=replayed&ip=127.0.0.1
+```
+
 ---
 
 ## 4. Design Decisions
