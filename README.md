@@ -148,7 +148,7 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "message": "Payment processed already",
+  "message": "Payment processed successfully",
   "data": {
       "requestResponseStatusCode": 200,
       "previousResponseBody": {
