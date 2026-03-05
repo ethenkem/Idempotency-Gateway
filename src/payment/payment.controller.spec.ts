@@ -77,7 +77,10 @@ describe('PaymentController', () => {
     expect(mockPaymentService.processPaymentService).toHaveBeenCalledWith(
       '127.0.0.1',
       'existing-key',
-      {},
+      {
+        amount: 200,
+        currency: 'GHS',
+      },
     );
   });
 });
