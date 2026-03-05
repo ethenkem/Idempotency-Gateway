@@ -348,13 +348,13 @@ A dedicated `AuditService` is called on every request that passes through the pa
 
 ### Why This Matters in a Real-World Fintech Company
 
-In payments, **observability is not optional — it is a compliance requirement**. Audit logs serve several critical purposes:
+In payments, **observability is not optional, it is a compliance requirement**. Audit logs serve several critical purposes:
 
 1. **Fraud Investigation**: If a merchant disputes a double charge, the audit log provides an immutable, timestamped record of every request received and how it was handled. You can prove definitively whether a duplicate was replayed or a new charge was triggered.
 
 2. **Regulatory Compliance**: Financial regulators (e.g., Bank of Ghana, PCI-DSS standards) require that payment systems maintain detailed records of all transaction attempts, not just successful ones. Audit logs satisfy this without polluting the core payments database.
 
-3. **Debugging & Incident Response**: When a client reports a failed retry, engineers can query audit logs by `Idempotency-Key` or IP address to see exactly what the server received, when, and what decision was made — without reconstructing state from scattered application logs.
+3. **Debugging & Incident Response**: When a client reports a failed retry, engineers can query audit logs by `Idempotency-Key` or IP address to see exactly what the server received, when, and what decision was made without reconstructing state from scattered application logs.
 
 4. **Detecting Abuse Patterns**: Repeated `409 Conflict` hits on the same key from different IP addresses could indicate a key-reuse attack. Because the IP address is captured on every log entry, these patterns can be detected and alerted on over time.
 
