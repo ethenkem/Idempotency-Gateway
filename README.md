@@ -151,7 +151,11 @@ Content-Type: application/json
   "message": "Payment processed already",
   "data": {
       "requestResponseStatusCode": 200,
-      "previousResponseBody": 
+      "previousResponseBody": {
+        "amount": 20,
+        "currency": "GHS",
+        "message": "Payment processed"
+    },
   }
 }
 ```
