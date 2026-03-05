@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IdempotencyModel } from './models/idempotency.model';
-import { Repository } from 'typeorm';
+import { ObjectId, Repository } from 'typeorm';
 import { ProcessPaymentDto } from 'src/payment/dto/process-payment.dto';
 import { SharedService } from 'src/shared/shared.service';
 import { IdempotencyResponseDto } from './dto/idempotency-response.dto';
@@ -47,9 +47,9 @@ export class IdempotencyService {
     return record;
   }
   
-  async findOneRecordById(id: string): Promise<IdempotencyModel> {
+  async findOneRecordById(id: ObjectId): Promise<IdempotencyModel> {
     let record: IdempotencyModel | null = await this.idempotencyRepository.findOne({
-        where: { id },
+        where: { _id: id },
       });
     if (!record) throw new NotFoundException('Idempotency record not found');
     return record;
@@ -75,8 +75,8 @@ export class IdempotencyService {
     
     // The "In-Flight" Check
     if (record.status === IDEMPOTENCY_STATUSES.PROCESSING) {
-        const processResponse = await this.idempotencyHelper.waitUntilProcessingCompletes(record.id);
-        record = await this.findOneRecordById(record.id);
+        const processResponse = await this.idempotencyHelper.waitUntilProcessingCompletes(record._id);
+        record = await this.findOneRecordById(record._id);
         if (record?.status === 'completed') {
           return { statusCode: processResponse.statusCode, body: processResponse.body };
         } else {

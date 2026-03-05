@@ -2,14 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  PrimaryGeneratedColumn,
+  ObjectId,
+  ObjectIdColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('Idempotency')
 export class IdempotencyModel {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @ObjectIdColumn()
+  _id: ObjectId;
 
   @Column({ unique: true })
   idempotencyKey: string;

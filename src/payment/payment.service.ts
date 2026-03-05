@@ -5,6 +5,7 @@ import { ProcessRaymentResponseDto } from './dto/process-payment-response.dto';
 import { AuditService } from 'src/audit/audit.service';
 import { AUDIT_LOG_RECORD_STATUSES } from 'src/audit/audit.constants';
 import { InjectRepository } from '@nestjs/typeorm';
+import { IDEMPOTENCY_STATUSES } from 'src/shared/shared.constants';
 
 @Injectable()
 export class PaymentService {
@@ -31,6 +32,7 @@ export class PaymentService {
     let record = await this.idempotencyService.findOneRecordByIdempotencyKey(idempotencyKey)
 
     if (!record) { 
+      let status
        // Log audit for processing
       const auditLog = {idempotencyKey, requestBody:body, responseBody: null, status: AUDIT_LOG_RECORD_STATUSES.PROCESSING, ipAddress};
       await this.auditService.logRequest(auditLog);
@@ -38,8 +40,8 @@ export class PaymentService {
       record = await this.idempotencyService.createIdempotencyRecord(idempotencyKey, body)
       // Simulate payment processing delay
       const result = await this.simulatePaymentProcessing();
-
-      await this.idempotencyService.updateIdempotencyRecord(record, result.statusCode, result.body);
+      status = IDEMPOTENCY_STATUSES.COMPLETED
+      await this.idempotencyService.updateIdempotencyRecord(record, result.statusCode, result.body, status);
       return { success: true, message:"Charged 100 GHS"};
     } else {
       // if record exists 

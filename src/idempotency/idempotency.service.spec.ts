@@ -116,7 +116,7 @@ describe('IdempotencyService', () => {
 
   it('executeOrReplay should wait if status is PROCESSING', async () => {
     const record = {
-      id: '1',
+      _id: '1',
       idempotencyKey: 'key123',
       requestHash: 'hash',
       status: 'processing',

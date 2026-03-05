@@ -1,15 +1,16 @@
 export class Audit {}
+import { ObjectId } from 'mongodb';
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ObjectIdColumn,
 } from 'typeorm';
 
 @Entity('PaymentAudit')
 export class PaymentAudit {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @ObjectIdColumn()
+  _id: ObjectId;
 
   @Column({ nullable: true })
   ipAddress: string;
