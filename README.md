@@ -250,7 +250,9 @@ MongoDB was chosen as the persistence layer for the idempotency store for severa
 
 The project is structured using NestJS modules, separating concerns into distinct layers: the `PaymentModule` handles HTTP request handling and business logic, the `IdempotencyModule` manages key lookup, hash comparison, record creation and the in-flight wait mechanism, the `AuditModule` handles all audit logging independently, and shared utilities such as body hashing live in a `SharedModule`. This modular design means the idempotency layer is reusable — it can be plugged into any other endpoint (e.g., refunds, transfers) without duplicating logic. It also makes each layer independently testable without depending on the full application stack.
 
-### Tests
+### Testing
+
+In a fintech application, tests are not optional, they are a safety net that protects real users from financial harm. A silent regression in the idempotency logic could mean a customer gets charged twice, which causes irreversible damage to trust and triggers regulatory scrutiny. Tests give confidence that every code change has not broken the pay-once guarantee.
 
 Unit and end-to-end tests were written to cover all scenarios handled by the gateway:
 
@@ -263,7 +265,7 @@ Unit and end-to-end tests were written to cover all scenarios handled by the gat
 | ✅ In-flight race condition | Duplicate waits via `waitUntilProcessingCompletes` and returns completed result |
 | ✅ Audit log entries | Correct status and IP address recorded for each scenario |
 
-Tests ensure the idempotency logic is airtight and that no regression silently breaks the pay-once guarantee
+Tests ensure the idempotency logic is airtight and that no regression silently breaks the pay-once guarantee.
 ---
 
 ## 5. Developer's Choice: Audit Logging
