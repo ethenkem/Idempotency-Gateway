@@ -270,18 +270,3 @@ In payments, **observability is not optional — it is a compliance requirement*
 3. **Debugging & Incident Response**: When a client reports a failed retry, engineers can query audit logs by `Idempotency-Key` or IP address to see exactly what the server received, when, and what decision was made — without reconstructing state from scattered application logs.
 
 4. **Detecting Abuse Patterns**: Repeated `409 Conflict` hits on the same key from different IP addresses could indicate a key-reuse attack. Because the IP address is captured on every log entry, these patterns can be detected and alerted on over time.
-
-### Tests
-
-Unit and end-to-end tests were written to cover all scenarios handled by the gateway:
-
-| Test Case | Description |
-|---|---|
-| ✅ First request | Processes payment, creates idempotency record, logs PROCESSING audit entry |
-| ✅ Duplicate request | Returns cached response with `X-Cache-Hit: true`, logs REPLAYED audit entry |
-| ✅ Conflict (different body) | Returns `409` with correct error message |
-| ✅ Missing key | Returns `400` when header is absent |
-| ✅ In-flight race condition | Duplicate waits via `waitUntilProcessingCompletes` and returns completed result |
-| ✅ Audit log entries | Correct status and IP address recorded for each scenario |
-
-Tests ensure the idempotency logic is airtight and that no regression silently breaks the pay-once guarantee.
