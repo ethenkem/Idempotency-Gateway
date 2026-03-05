@@ -5,6 +5,7 @@ A NestJS-based idempotency layer that ensures payment requests are processed **e
 ---
 
 ## 1. Architecture Diagram
+
 ```mermaid
 flowchart TD
     A[POST /process-payment] --> B{Idempotency-Key Header Present?}
@@ -43,6 +44,7 @@ flowchart TD
 - MongoDB (local or Atlas URI)
 
 ### Installation
+
 ```bash
 git clone https://github.com/your-username/your-repo-name.git
 cd idempotency-gateway
@@ -52,31 +54,26 @@ npm install
 ### Environment Variables
 
 Create a `.env` file in the root directory, example:
+
 ```env
 # make sure ip access list has 0.0.0.0/0 for localhost
 MONGODB_URI=mongodb://localhost:27017/idempotency-gateway
 ```
 
 ### Running the App
+
 ```bash
 # Development mode
 npm run start:dev
 
-# Production mode
-npm run build
-npm run start:prod
 ```
 
 ### Running Tests
+
 ```bash
 # Run all unit tests
 npm run test
 
-# Run tests with coverage report
-npm run test:cov
-
-# Run end-to-end tests
-npm run test:e2e
 ```
 
 ---
@@ -84,6 +81,7 @@ npm run test:e2e
 ## 3. API Documentation
 
 ### Base URL
+
 ```
 http://localhost:3000
 ```
@@ -94,12 +92,13 @@ Processes a payment. If the same `Idempotency-Key` is sent again with the same b
 
 #### Request Headers
 
-| Header | Required | Description |
-|---|---|---|
-| `Idempotency-Key` | ✅ Yes | A unique string identifying this request |
-| `Content-Type` | ✅ Yes | `application/json` |
+| Header            | Required | Description                              |
+| ----------------- | -------- | ---------------------------------------- |
+| `Idempotency-Key` | ✅ Yes   | A unique string identifying this request |
+| `Content-Type`    | ✅ Yes   | `application/json`                       |
 
 #### Request Body
+
 ```json
 {
   "amount": 100,
@@ -107,16 +106,17 @@ Processes a payment. If the same `Idempotency-Key` is sent again with the same b
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `amount` | number | ✅ Yes | Payment amount |
-| `currency` | string | ✅ Yes | Currency code (e.g. GHS) |
+| Field      | Type   | Required | Description              |
+| ---------- | ------ | -------- | ------------------------ |
+| `amount`   | number | ✅ Yes   | Payment amount           |
+| `currency` | string | ✅ Yes   | Currency code (e.g. GHS) |
 
 ---
 
 #### Scenario 1 — First Request (Happy Path)
 
 No record exists for the key. An audit log entry is created with `status=PROCESSING`, the idempotency record is saved, payment is simulated (2s delay), the record is updated to `COMPLETED`, and the response is returned.
+
 ```http
 POST /process-payment
 Idempotency-Key: txn_abc_001
@@ -129,6 +129,7 @@ Content-Type: application/json
 ```
 
 **Response `201 Created`:**
+
 ```json
 {
   "success": true,
@@ -141,6 +142,7 @@ Content-Type: application/json
 #### Scenario 2 — Duplicate Request (Cache Hit)
 
 A record already exists with a matching hash and `status=COMPLETED`. The stored response is returned immediately with no reprocessing. An audit log entry is created with `status=REPLAYED`.
+
 ```http
 POST /process-payment
 Idempotency-Key: txn_abc_001
@@ -153,6 +155,7 @@ Content-Type: application/json
 ```
 
 **Response `200 OK`:**
+
 ```json
 {
   "success": true,
@@ -161,6 +164,7 @@ Content-Type: application/json
 ```
 
 **Response Header:**
+
 ```
 X-Cache-Hit: true
 ```
@@ -170,6 +174,7 @@ X-Cache-Hit: true
 #### Scenario 3 — Same Key, Different Body (Conflict)
 
 A record exists for the key but the hash of the incoming body does not match the stored hash.
+
 ```http
 POST /process-payment
 Idempotency-Key: txn_abc_001
@@ -182,6 +187,7 @@ Content-Type: application/json
 ```
 
 **Response `409 Conflict`:**
+
 ```json
 {
   "statusCode": 409,
@@ -196,6 +202,7 @@ Content-Type: application/json
 Request arrives without the `Idempotency-Key` header.
 
 **Response `400 Bad Request`:**
+
 ```json
 {
   "statusCode": 400,
@@ -210,6 +217,7 @@ Request arrives without the `Idempotency-Key` header.
 A duplicate request arrives while the original is still processing (`status=PROCESSING`). The duplicate calls `waitUntilProcessingCompletes`, re-fetches the record once done, and returns the completed result. An audit log entry is created with `status=REPLAYED`.
 
 **Response `200 OK`:**
+
 ```json
 {
   "success": true,
@@ -218,6 +226,7 @@ A duplicate request arrives while the original is still processing (`status=PROC
 ```
 
 **Response Header:**
+
 ```
 X-Cache-Hit: true
 ```
@@ -248,7 +257,6 @@ The project is structured using NestJS modules, separating concerns into distinc
 ## 5. Developer's Choice
 
 ### Audit Log Entries
-
 
 A dedicated `AuditService` is called on every request that passes through the payment gateway. Each audit log entry captures:
 
