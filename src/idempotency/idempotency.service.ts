@@ -33,10 +33,10 @@ export class IdempotencyService {
     return await this.idempotencyRepository.save(record);
   }
 
-  async updateIdempotencyRecord(record: IdempotencyModel, statusCode: number, responseData: any) {
+  async updateIdempotencyRecord(record: IdempotencyModel, statusCode: number, responseData: any, status: IDEMPOTENCY_STATUSES) {
     record.statusCode = statusCode;
     record.responseData = JSON.stringify(responseData);
-    record.status = IDEMPOTENCY_STATUSES.COMPLETED;
+    record.status = status;
     await this.idempotencyRepository.save(record);
   }
 
@@ -72,8 +72,9 @@ export class IdempotencyService {
       );
     } 
     
+    
     // The "In-Flight" Check
-      if (record.status === IDEMPOTENCY_STATUSES.PROCESSING) {
+    if (record.status === IDEMPOTENCY_STATUSES.PROCESSING) {
         const processResponse = await this.idempotencyHelper.waitUntilProcessingCompletes(record.id);
         record = await this.findOneRecordById(record.id);
         if (record?.status === 'completed') {
