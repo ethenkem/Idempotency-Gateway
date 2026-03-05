@@ -7,8 +7,8 @@ import { IdempotencyModule } from './idempotency/idempotency.module';
 import { SharedModule } from './shared/shared.module';
 import { SharedService } from './shared/shared.service';
 import { AuditModule } from './audit/audit.module';
-import { MONGO_DB_CONNECTION_STRING } from './shared/shared.constants';
 import { ConfigModule } from '@nestjs/config';
+import { getMongoDbConnectionString } from './shared/shared.constants';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { ConfigModule } from '@nestjs/config';
     AuditModule,
     TypeOrmModule.forRoot({
       type: 'mongodb',
-      url: MONGO_DB_CONNECTION_STRING,
+      url: getMongoDbConnectionString(),
       entities: [__dirname + '/**/*.model{.ts,.js}'],
       synchronize: true,
     }),
