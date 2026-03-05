@@ -5,7 +5,6 @@ A NestJS-based idempotency layer that ensures payment requests are processed **e
 ---
 
 ## 1. Architecture Diagram
-
 ```mermaid
 flowchart TD
     A[POST /process-payment] --> B{Idempotency-Key Header Present?}
@@ -40,11 +39,10 @@ flowchart TD
 ### Prerequisites
 
 - Node.js v18+
-- npm or yarn
+- npm 
 - MongoDB (local or Atlas URI)
 
 ### Installation
-
 ```bash
 git clone https://github.com/ethenkem/Idempotency-Gateway.git
 cd Idempotency-Gateway
@@ -54,22 +52,18 @@ npm install
 ### Environment Variables
 
 Create a `.env` file in the root directory, example:
-
 ```env
 # make sure ip access list has 0.0.0.0/0 for localhost
-MONGODB_URI=mongodb://localhost:27017/idempotency-gateway
+MONGO_DB_CONNECTION_STRING=mongodb://localhost:27017/idempotency-gateway
 ```
 
 ### Running the App
-
 ```bash
 # Development mode
 npm run start:dev
-
 ```
 
 ### Running Tests
-
 ```bash
 # Run all unit tests
 npm run test
@@ -81,7 +75,6 @@ npm run test
 ## 3. API Documentation
 
 ### Base URL
-
 ```
 http://localhost:3000
 ```
@@ -92,13 +85,12 @@ Processes a payment. If the same `Idempotency-Key` is sent again with the same b
 
 #### Request Headers
 
-| Header            | Required | Description                              |
-| ----------------- | -------- | ---------------------------------------- |
-| `Idempotency-Key` | ✅ Yes   | A unique string identifying this request |
-| `Content-Type`    | ✅ Yes   | `application/json`                       |
+| Header | Required | Description |
+|---|---|---|
+| `Idempotency-Key` | ✅ Yes | A unique string identifying this request |
+| `Content-Type` | ✅ Yes | `application/json` |
 
 #### Request Body
-
 ```json
 {
   "amount": 100,
@@ -106,17 +98,16 @@ Processes a payment. If the same `Idempotency-Key` is sent again with the same b
 }
 ```
 
-| Field      | Type   | Required | Description              |
-| ---------- | ------ | -------- | ------------------------ |
-| `amount`   | number | ✅ Yes   | Payment amount           |
-| `currency` | string | ✅ Yes   | Currency code (e.g. GHS) |
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `amount` | number | ✅ Yes | Payment amount |
+| `currency` | string | ✅ Yes | Currency code (e.g. GHS) |
 
 ---
 
 #### Scenario 1 — First Request (Happy Path)
 
-No record exists for the key. An audit log entry is created with `status=PROCESSING`, the idempotency record is saved, payment is simulated (2s delay), the record is updated to `COMPLETED`, and the response is returned.
-
+No record exists for the key. An audit log entry is created with `status=PROCESSING`, the idempotency record is saved, payment is simulated (2s delay), the record is updated to `COMPLETED`, and the response is returned. `data` is `null` on first request.
 ```http
 POST /process-payment
 Idempotency-Key: txn_abc_001
@@ -129,11 +120,11 @@ Content-Type: application/json
 ```
 
 **Response `201 Created`:**
-
 ```json
 {
   "success": true,
-  "message": "Charged 100 GHS"
+  "message": "Charged 100 GHS",
+  "data": null
 }
 ```
 
@@ -141,8 +132,7 @@ Content-Type: application/json
 
 #### Scenario 2 — Duplicate Request (Cache Hit)
 
-A record already exists with a matching hash and `status=COMPLETED`. The stored response is returned immediately with no reprocessing. An audit log entry is created with `status=REPLAYED`.
-
+A record already exists with a matching hash and `status=COMPLETED`. The stored response is returned immediately with no reprocessing. An audit log entry is created with `status=REPLAYED`. `data` contains the previous response body.
 ```http
 POST /process-payment
 Idempotency-Key: txn_abc_001
@@ -155,16 +145,18 @@ Content-Type: application/json
 ```
 
 **Response `200 OK`:**
-
 ```json
 {
   "success": true,
-  "message": "Payment processed successfully"
+  "message": "Payment processed already",
+  "data": {
+      "requestResponseStatusCode": 200,
+      "previousResponseBody": 
+  }
 }
 ```
 
 **Response Header:**
-
 ```
 X-Cache-Hit: true
 ```
@@ -174,7 +166,6 @@ X-Cache-Hit: true
 #### Scenario 3 — Same Key, Different Body (Conflict)
 
 A record exists for the key but the hash of the incoming body does not match the stored hash.
-
 ```http
 POST /process-payment
 Idempotency-Key: txn_abc_001
@@ -187,7 +178,6 @@ Content-Type: application/json
 ```
 
 **Response `409 Conflict`:**
-
 ```json
 {
   "statusCode": 409,
@@ -202,7 +192,6 @@ Content-Type: application/json
 Request arrives without the `Idempotency-Key` header.
 
 **Response `400 Bad Request`:**
-
 ```json
 {
   "statusCode": 400,
@@ -215,18 +204,27 @@ Request arrives without the `Idempotency-Key` header.
 #### Scenario 5 — In-Flight Race Condition
 
 A duplicate request arrives while the original is still processing (`status=PROCESSING`). The duplicate calls `waitUntilProcessingCompletes`, re-fetches the record once done, and returns the completed result. An audit log entry is created with `status=REPLAYED`.
+```http
+POST /process-payment
+Idempotency-Key: txn_abc_001
+Content-Type: application/json
+
+{
+  "amount": 100,
+  "currency": "GHS"
+}
+```
 
 **Response `200 OK`:**
-
 ```json
 {
   "success": true,
-  "message": "Payment processed successfully"
+  "message": "Payment processed successfully",
+  "data": null
 }
 ```
 
 **Response Header:**
-
 ```
 X-Cache-Hit: true
 ```
@@ -252,18 +250,32 @@ MongoDB was chosen as the persistence layer for the idempotency store for severa
 
 The project is structured using NestJS modules, separating concerns into distinct layers: the `PaymentModule` handles HTTP request handling and business logic, the `IdempotencyModule` manages key lookup, hash comparison, record creation and the in-flight wait mechanism, the `AuditModule` handles all audit logging independently, and shared utilities such as body hashing live in a `SharedModule`. This modular design means the idempotency layer is reusable — it can be plugged into any other endpoint (e.g., refunds, transfers) without duplicating logic. It also makes each layer independently testable without depending on the full application stack.
 
+### Tests
+
+Unit and end-to-end tests were written to cover all scenarios handled by the gateway:
+
+| Test Case | Description |
+|---|---|
+| ✅ First request | Processes payment, creates idempotency record, logs PROCESSING audit entry |
+| ✅ Duplicate request | Returns cached response with `X-Cache-Hit: true`, logs REPLAYED audit entry |
+| ✅ Conflict (different body) | Returns `409` with correct error message |
+| ✅ Missing key | Returns `400` when header is absent |
+| ✅ In-flight race condition | Duplicate waits via `waitUntilProcessingCompletes` and returns completed result |
+| ✅ Audit log entries | Correct status and IP address recorded for each scenario |
+
+Tests ensure the idempotency logic is airtight and that no regression silently breaks the pay-once guarantee
 ---
 
-## 5. Developer's Choice
+## 5. Developer's Choice: Audit Logging
 
-### Audit Log Entries
+### What Was Added
 
 A dedicated `AuditService` is called on every request that passes through the payment gateway. Each audit log entry captures:
 
 - The `Idempotency-Key` used
 - The full request body
 - The response body (where available)
-- The outcome status: `PROCESSING`, or `REPLAYED`
+- The outcome status: `PROCESSING` or `REPLAYED`
 - The client IP address (extracted from `req.ip` or `x-forwarded-for`)
 - A timestamp
 
@@ -278,3 +290,4 @@ In payments, **observability is not optional — it is a compliance requirement*
 3. **Debugging & Incident Response**: When a client reports a failed retry, engineers can query audit logs by `Idempotency-Key` or IP address to see exactly what the server received, when, and what decision was made — without reconstructing state from scattered application logs.
 
 4. **Detecting Abuse Patterns**: Repeated `409 Conflict` hits on the same key from different IP addresses could indicate a key-reuse attack. Because the IP address is captured on every log entry, these patterns can be detected and alerted on over time.
+
