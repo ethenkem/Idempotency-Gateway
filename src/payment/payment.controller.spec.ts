@@ -30,32 +30,50 @@ describe('PaymentController', () => {
   });
 
   it('should replay payment if record already exists', async () => {
-    // Mock the service to simulate an existing record
     mockPaymentService.processPaymentService.mockResolvedValue({
       success: true,
       message: 'Payment processed successfully',
       isReplay: true,
-      previousResponseStatusCode: 200,
-      headers: { 'X-Cache-Hit': 'true' },
+      previousResponseData: {
+        previousResponseStatusCode: 200,
+        previousResponseBody: {
+          amount: 200,
+          currency: 'GHS',
+          message: 'Payment processed',
+        },
+      },
     });
+
     const req = { ip: '127.0.0.1' } as any;
     const res = { setHeader: jest.fn() } as any;
-    const body = {} as any;
+    const body = { amount: 200, currency: 'GHS' } as any;
     const idempotencyKey = 'existing-key';
 
-    // Call the controller method
-    const result = await controller.processPayment(req, res, body, idempotencyKey);
+    const result = await controller.processPayment(
+      req,
+      res,
+      body,
+      idempotencyKey,
+    );
 
-    // Assert the controller returns the service result
+    // Assert the controller returns only success and message
     expect(result).toEqual({
       success: true,
       message: 'Payment processed successfully',
+      data: {
+        previousResponseStatusCode: 200,
+        previousResponseBody: {
+          amount: 200,
+          currency: 'GHS',
+          message: 'Payment processed',
+        },
+      },
     });
 
-    // Assert the header is set correctly if it's a replay
+    // Assert the header is set from nested previousResponseData.headers
     expect(res.setHeader).toHaveBeenCalledWith('X-Cache-Hit', 'true');
 
-    // Assert the service method was called with correct arguments
+    // Assert the service was called correctly
     expect(mockPaymentService.processPaymentService).toHaveBeenCalledWith(
       '127.0.0.1',
       'existing-key',

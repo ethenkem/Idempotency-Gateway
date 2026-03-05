@@ -85,8 +85,10 @@ export class IdempotencyService {
     }
 
     return {
+        // previous response data for replay
         statusCode: record.statusCode,
         headers: { 'X-Cache-Hit': 'true' },
+        // previous response data for replay
         body: JSON.parse(record.responseData),
       };
   }

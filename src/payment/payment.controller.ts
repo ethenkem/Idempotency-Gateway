@@ -24,11 +24,15 @@ export class PaymentController {
       processPayment,
     );
     if (response.isReplay) {
-      res.setHeader('X-Cache-Hit', response.headers['X-Cache-Hit']);
+      res.setHeader('X-Cache-Hit', 'true');
     }
     return {
       success: true,
       message: response.message,
+      data: {
+        previousResponseBody: response.isReplay ? response.previousResponseData?.previousResponseBody : null,
+        previousResponseStatusCode: response.isReplay ? response.previousResponseData?.previousResponseStatusCode : null
+      }
     };
   }
 }
