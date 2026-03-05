@@ -46,8 +46,8 @@ flowchart TD
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd idempotency-gateway
+git clone https://github.com/ethenkem/Idempotency-Gateway.git
+cd Idempotency-Gateway
 npm install
 ```
 
