@@ -6,7 +6,7 @@ import { PaymentAudit } from './models/audit-log.model';
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
-  @Get()
+  @Get("/logs")
   async filterAudits(
     @Query('key') idempotencyKey?: string,
     @Query('status') status?: string,
